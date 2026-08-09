@@ -323,7 +323,15 @@ class MERITSLInference:
         audio_h = self._encode_audio(audio_np)                     # (256,)
         text_h = self._encode_text(text)                           # (2048,)
 
-        logits = self.fusion(text_h.unsqueeze(0), audio_h.unsqueeze(0))  # (1, 4)
+        # Stage3Fusion expects (B, K, D) for both modalities + a mask (B, K).
+        # For single-utterance inference K=1 and mask is all True.
+        text_seq = text_h.view(1, 1, -1)                           # (1, 1, 2048)
+        audio_seq = audio_h.view(1, 1, -1)                         # (1, 1, 256)
+        mask = torch.ones(1, 1, dtype=torch.bool, device=self.device)
+        logits = self.fusion(text_seq, audio_seq, mask)            # (1, 1, 4) or (1, 4)
+        # Squeeze away the seq dim if present
+        if logits.dim() == 3:
+            logits = logits.squeeze(1)                             # (1, 4)
         probs = F.softmax(logits, dim=-1).squeeze(0).cpu().tolist()
         pred_idx = int(np.argmax(probs))
 
