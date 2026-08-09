@@ -1,0 +1,58 @@
+# Best model configuration — Llama-3.1-8B LoRA + CARE-WavLM
+# Test weighted-F1 = 0.8746 (best seed) on IEMOCAP session 5
+
+# Text branch
+text:
+  base_model: meta-llama/Meta-Llama-3.1-8B
+  load_in_4bit: true              # QLoRA-style 4-bit for RTX 4090 / 3090
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_compute_dtype: bfloat16
+  lora_adapter_path: checkpoints/llama_lora
+  stage2:
+    checkpoint: checkpoints/text_stage2.pt
+    hidden_dim: 1024              # Bi-GRU per-direction
+    num_heads: 8
+    dropout: 0.5
+    output_dim: 2048              # 2 * hidden_dim
+  max_length: 128                 # tokenized text
+
+# Audio branch
+# NOTE: seed 1 Stage III config shows audio_dim=256 → Audio Stage II used
+# a smaller Bi-GRU (hidden=128, 2*128=256). Confirm against actual training config.
+audio:
+  care_wavlm:
+    checkpoint: checkpoints/care_wavlm/best.pth
+    num_layers: 13                # 1 conv + 12 transformer
+    hidden_dim: 768               # WavLM-base
+  stage2:
+    checkpoint: checkpoints/audio_stage2.pt
+    input_dim: 1536               # CARE per-layer sum (12 acoustic + 12 semantic + 1 conv = 13 * concat)
+    gru_hidden: 128               # ← smaller than assumed (produces 256-d out)
+    num_heads: 8
+    dropout: 0.5
+    output_dim: 256               # 2 * gru_hidden — matches Stage III audio_dim
+  sample_rate: 16000
+  max_duration_s: 15              # clip longer audio
+
+# Whisper for auto-transcription
+whisper:
+  model: large-v3                 # or "medium" for lower VRAM
+  device: cuda
+  language: en
+  fp16: true
+
+# Stage III co-attention fusion
+# From seed 1 config.snapshot.yaml (wF1 0.8746)
+fusion:
+  checkpoint: checkpoints/stage3.pt
+  text_dim: 2048                  # from Text Stage II Bi-GRU (hidden=1024)
+  audio_dim: 256                  # from Audio Stage II Bi-GRU (hidden=128)
+  hidden_dim: 256
+  num_heads: 8
+  dropout: 0.5
+  num_labels: 4
+
+# Label mapping
+labels:
+  names: [angry, happy, sad, neutral]
+  # Note: happy includes "excited" (IEMOCAP 4-class convention)

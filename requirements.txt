@@ -1,0 +1,26 @@
+# Core
+torch>=2.4.0
+torchaudio>=2.4.0
+transformers>=4.44.0
+peft>=0.12.0
+accelerate>=0.34.0
+bitsandbytes>=0.43.0        # 4-bit Llama loading
+
+# Audio
+soundfile>=0.12.1
+librosa>=0.10.0
+openai-whisper>=20240930    # for auto-transcription
+
+# CARE / WavLM
+# (WavLM pulled via transformers; CARE code vendored under src/care/)
+
+# Utilities
+pyyaml>=6.0
+tqdm>=4.66.0
+huggingface_hub>=0.24.0
+
+# Demo (optional)
+gradio>=4.44.0
+
+# Dev / test
+pytest>=8.0.0

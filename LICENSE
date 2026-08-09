@@ -1,0 +1,35 @@
+Copyright 2026 [Your Name]
+
+The **code** in this repository is licensed under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+---
+
+The **model weights** distributed alongside this code (LoRA adapter, downstream
+heads) are derivative works of Meta Llama 3.1 and are governed by the
+**Llama 3.1 Community License Agreement**:
+
+    https://llama.meta.com/llama3_1/license/
+
+Users must comply with the Llama 3.1 Acceptable Use Policy:
+
+    https://llama.meta.com/llama3_1/use-policy/
+
+This project is **"Built with Llama"** as required by section 5(a) of the Llama
+3.1 Community License.
+
+---
+
+The audio encoder (CARE) is adapted from https://github.com/iiscleap/care;
+please cite the CARE paper (Dutta & Ganapathy, ICASSP 2025) when using this
+work.
+
+Whisper (used for automatic transcription) is © OpenAI, MIT licensed.

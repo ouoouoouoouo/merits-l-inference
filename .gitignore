@@ -1,0 +1,38 @@
+# Checkpoints — pulled by scripts/download_checkpoints.sh
+checkpoints/
+!checkpoints/.gitkeep
+
+# Whisper cache
+whisper_cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local overrides
+.env
+config.local.yaml
+
+# Sample outputs
+outputs/
+*.wav.emotion.json
