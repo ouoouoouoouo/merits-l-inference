@@ -158,10 +158,14 @@ class MERITSLInference:
         self.care_ds_stage1.load_state_dict(ds1_ckpt["model_state_dict"])
         self.care_ds_stage1.to(self.device).eval()
 
-        log.info("Loading Audio Stage II Bi-GRU …")
+        log.info("Loading Audio Stage II Bi-GRU (using TextStage2 arch — generic Bi-GRU+attn) …")
+        # NOTE: audio_stage2.pt was trained with the generic Bi-GRU+self-attn
+        # architecture (same as TextStage2), NOT with AudioClassifier (which is
+        # the Stage I SUPERB-13-layer-weighted classifier). Matches how
+        # extract_stage2_utt_hidden.py uses build_text_stage2 for both modalities.
         self.audio_stage2 = _load_stage_ckpt(
             self.ckpt_dir / "audio_stage2.pt",
-            build_audio_classifier, AudioClassifier, self.device,
+            build_text_stage2, TextStage2, self.device,
         )
 
         # ---- Text branch ----
@@ -181,9 +185,9 @@ class MERITSLInference:
     # ---------------------------------------------------------------- deps
 
     def _check_dependencies(self):
+        # AudioClassifier not required — audio_stage2 uses TextStage2 arch.
         missing = []
         for name, obj in [
-            ("merits_l_text.src.models.audio_classifier.AudioClassifier", AudioClassifier),
             ("merits_l_llama.src.models.text_stage2.TextStage2", TextStage2),
             ("merits_l_llama.src.models.stage3_fusion.Stage3Fusion", Stage3Fusion),
             ("care_training.scripts.extract_iemocap_care_downstream_style.CAREDownstreamExtractor",
