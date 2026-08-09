@@ -328,10 +328,17 @@ class MERITSLInference:
         text_seq = text_h.view(1, 1, -1)                           # (1, 1, 2048)
         audio_seq = audio_h.view(1, 1, -1)                         # (1, 1, 256)
         mask = torch.ones(1, 1, dtype=torch.bool, device=self.device)
-        logits = self.fusion(text_seq, audio_seq, mask)            # (1, 1, 4) or (1, 4)
+        out = self.fusion(text_seq, audio_seq, mask)
+        # Stage3Fusion.forward returns a dict (e.g. {"logits": ..., "loss": None}).
+        if isinstance(out, dict):
+            logits = out.get("logits", out.get("out", next(iter(out.values()))))
+        else:
+            logits = out
         # Squeeze away the seq dim if present
         if logits.dim() == 3:
             logits = logits.squeeze(1)                             # (1, 4)
+        if logits.dim() == 1:
+            logits = logits.unsqueeze(0)                           # (1, 4)
         probs = F.softmax(logits, dim=-1).squeeze(0).cpu().tolist()
         pred_idx = int(np.argmax(probs))
 
