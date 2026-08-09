@@ -104,7 +104,7 @@ The **model code** lives in three sibling GitHub repositories:
 
 `inference_example.py` in this repo imports directly from these three so no re-implementation is duplicated.
 
-## Quick start (60 seconds)
+## Quick start
 
 ```bash
 # 1. Clone this repo and install its own deps
@@ -113,19 +113,41 @@ cd merits-l-inference
 pip install -r requirements.txt
 
 # 2. Install the three model repos (one-shot script)
+#    Creates deps/{care-training, merits-l-text, merits-l-llama} + underscore
+#    symlinks + adds deps/ to sys.path via a .pth file.
 bash scripts/setup_dependencies.sh
 
-# 3. Download the 5 fine-tuned checkpoints (~1.3 GB from HuggingFace Hub)
-#    Requires you to first accept the Llama-3.1 license on HF
+# 3. Accept Llama-3.1 license on HuggingFace and log in
+#    https://huggingface.co/meta-llama/Meta-Llama-3.1-8B  (Meta approves in a few hours)
 huggingface-cli login
+
+# 4. Download the 6 fine-tuned checkpoints (~1.3 GB from HuggingFace Hub)
 bash scripts/download_checkpoints.sh
 
-# 4. Run inference on a sample wav
-python inference_example.py --audio samples/happy.wav
-# → Prediction: happy (confidence 0.87)
+# 5. Run inference on a sample wav (any English 1-15 sec clip)
+python inference_example.py \
+    --audio path/to/your.wav \
+    --care-repo deps/care-training/CARE/pretraining
 ```
 
-Full details in [USAGE.md](USAGE.md).
+**Expected output** (verified 2026-08-09 on `Ses05F_impro01_F000.wav`, GT = neutral):
+
+```json
+{
+  "audio": ".../Ses05F_impro01_F000.wav",
+  "transcript": "Hi, I need an ID.",
+  "prediction": "neutral",
+  "confidence": 0.41,
+  "probabilities": {
+    "angry":   0.11,
+    "happy":   0.29,
+    "sad":     0.19,
+    "neutral": 0.41
+  }
+}
+```
+
+Full details in [USAGE.md](USAGE.md). If you hit an import error or dtype mismatch, see [USAGE.md § Troubleshooting](USAGE.md#8-troubleshooting).
 
 ## Results
 

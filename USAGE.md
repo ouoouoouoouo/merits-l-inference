@@ -45,29 +45,38 @@ pip install -r requirements.txt
 ## 3. Install the three dependency repos
 
 The model class definitions live in three sibling GitHub repositories.
-Install all three in editable mode so `inference_example.py` can import
-`Stage3Fusion`, `TextStage2`, `AudioStage2`, etc.:
+Install all three so `inference_example.py` can import
+`Stage3Fusion`, `TextStage2`, `CAREEmotionClassifier`, etc.:
 
 ```bash
 bash scripts/setup_dependencies.sh
 ```
 
-This clones and `pip install -e` the following into a `deps/` directory:
+The script clones the following into `deps/`, creates underscored symlinks
+(so Python's import machinery — which forbids dashes — can find them),
+and adds `deps/` to `sys.path` via a `.pth` file:
 
 - [`ouoouoouoouo/care-training`](https://github.com/ouoouoouoouo/care-training)
   — audio encoder (CARE-WavLM) + CARE downstream Stage I
 - [`ouoouoouoouo/merits-l-text`](https://github.com/ouoouoouoouo/merits-l-text)
-  — Audio Stage II model, feature extraction scripts
+  — Audio Stage II feature-extraction scripts (RoBERTa baseline pipeline)
 - [`ouoouoouoouo/merits-l-llama`](https://github.com/ouoouoouoouo/merits-l-llama)
-  — Text Stage I/II, Stage III co-attention fusion
+  — Text Stage I/II (Llama LoRA), Stage III co-attention fusion
 
 Verify with:
 
 ```python
-from merits_l_llama.src.models.stage3_fusion import Stage3Fusion   # noqa
-from merits_l_llama.src.models.text_stage2 import TextStage2       # noqa
-from merits_l_text.src.models.audio_classifier import AudioStage2  # noqa
+from merits_l_llama.src.models.stage3_fusion import Stage3Fusion            # noqa
+from merits_l_llama.src.models.text_stage2 import TextStage2                # noqa
+from care_training.scripts.train_care_downstream_iemocap import CAREEmotionClassifier  # noqa
+from care_training.scripts.extract_iemocap_care_downstream_style import CAREDownstreamExtractor  # noqa
 ```
+
+Note: `audio_stage2.pt` was trained with the generic **TextStage2** (Bi-GRU +
+self-attention) architecture, not the SUPERB-13-layer `AudioClassifier` in
+`merits_l_text/src/models/audio_classifier.py`. The loader in
+`inference_example.py` handles this correctly — you don't need to worry
+about it, but if you `git blame` the code that's why.
 
 ## 4. Get the Llama-3.1 base model
 
@@ -184,6 +193,62 @@ result = model.predict_audio(
 <summary><b>ImportError: cannot import name 'Stage3Fusion' from 'merits_l_llama'</b></summary>
 
 You skipped step 3. Run `bash scripts/setup_dependencies.sh`.
+</details>
+
+<details>
+<summary><b>ImportError: No module named 'merits_l_text' (even after setup)</b></summary>
+
+Python cannot import a directory whose name contains a dash
+(`merits-l-text` → attempted `import merits-l-text` is a syntax error). Our
+`setup_dependencies.sh` creates underscored symlinks (`merits_l_text` →
+`merits-l-text`) inside `deps/` and adds `deps/` to `sys.path` via a `.pth`
+file. If it didn't run cleanly, do it manually:
+
+```bash
+cd deps
+ln -sf merits-l-text merits_l_text
+ln -sf merits-l-llama merits_l_llama
+ln -sf care-training care_training           # if not already underscored
+export PYTHONPATH="$PWD:$PYTHONPATH"
+```
+</details>
+
+<details>
+<summary><b>ModuleNotFoundError: No module named 'model_pase'</b></summary>
+
+Pass `--care-repo` pointing to the directory containing `model_pase.py`
+(inside the CARE-training clone):
+
+```bash
+python inference_example.py --audio a.wav --care-repo deps/care-training/CARE/pretraining
+```
+</details>
+
+<details>
+<summary><b>PackageNotFoundError: No package metadata was found for bitsandbytes</b></summary>
+
+```bash
+pip install bitsandbytes
+```
+If you don't want 4-bit Llama, use `--no-4bit` (requires ≥16 GB VRAM).
+</details>
+
+<details>
+<summary><b>ValueError: RNN input dtype (torch.float16) does not match weight dtype (torch.float32)</b></summary>
+
+Bug in an earlier version — the Llama 4-bit hidden output (bf16) needs to be
+cast to fp32 before entering the Text Stage II Bi-GRU. This is already fixed
+in the current `inference_example.py`; if you see this, `git pull` the repo.
+</details>
+
+<details>
+<summary><b>AttributeError: 'AudioClassifier' object has no attribute 'encode'</b></summary>
+
+Bug in an earlier version. `audio_stage2.pt` was trained with the generic
+`TextStage2` architecture (Bi-GRU + self-attention), NOT `AudioClassifier`
+(which is the Stage I SUPERB-13-layer weighted classifier). The current
+`inference_example.py` uses `TextStage2` for both text and audio Stage II —
+`git pull` if you see this.
 </details>
 
 <details>
