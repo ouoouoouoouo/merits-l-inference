@@ -292,11 +292,14 @@ class MERITSLInference:
         ).to(self.device)
 
         outputs = self.llama(**tokens, output_hidden_states=True)
-        h = outputs.hidden_states[-1]                              # (1, L, 4096)
+        h = outputs.hidden_states[-1]                              # (1, L, 4096) — bf16 in 4-bit mode
 
         # Mean-pool tokens (matches how Text Stage I / II training extracted utt-level features)
         attn = tokens.attention_mask.unsqueeze(-1).to(h.dtype)     # (1, L, 1)
         utt = (h * attn).sum(dim=1) / attn.sum(dim=1).clamp(min=1)  # (1, 4096)
+
+        # TextStage2 is fp32 — cast Llama output before feeding into Bi-GRU
+        utt = utt.to(torch.float32)
 
         # Text Stage II — treat as seq_len=1 dialogue
         seq = utt.unsqueeze(1)                                     # (1, 1, 4096)
