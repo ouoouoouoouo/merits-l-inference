@@ -38,10 +38,18 @@ for url in "${REPOS[@]}"; do
     if [ -f "$name/setup.py" ] || [ -f "$name/pyproject.toml" ]; then
         pip install -e "./$name"
     else
-        # No packaging metadata — add to PYTHONPATH via a .pth file
+        # No packaging metadata — add to PYTHONPATH via a .pth file.
+        # Python cannot import from a directory with a dash in its name, so also
+        # create an underscored symlink (merits-l-text → merits_l_text) inside
+        # the deps root and add THAT to sys.path.
+        module_name="${name//-/_}"
+        if [ "$module_name" != "$name" ] && [ ! -e "$module_name" ]; then
+            ln -s "$name" "$module_name"
+            echo "  → symlinked $name → $module_name (underscored, importable)"
+        fi
         SITE_PACKAGES="$(python -c 'import site, sys; print(site.getsitepackages()[0])')"
-        echo "$(realpath "$name")" > "$SITE_PACKAGES/${name}.pth"
-        echo "  → added $(realpath "$name") to sys.path via ${name}.pth"
+        echo "$(realpath ".")" > "$SITE_PACKAGES/merits_l_inference_deps.pth"
+        echo "  → added $(realpath ".") to sys.path via merits_l_inference_deps.pth"
     fi
 done
 

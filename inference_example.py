@@ -54,30 +54,57 @@ import yaml
 
 # ---------- dependency repo imports ----------
 try:
-    from merits_l_text.src.models.audio_classifier import AudioStage2
+    from merits_l_text.src.models.audio_classifier import AudioClassifier as AudioStage2
+    from merits_l_text.src.models.audio_classifier import build_audio_classifier
 except ImportError:
     AudioStage2 = None
+    build_audio_classifier = None
 
 try:
-    from merits_l_llama.src.models.text_stage2 import TextStage2
+    from merits_l_llama.src.models.text_stage2 import TextStage2, build_text_stage2
 except ImportError:
     TextStage2 = None
+    build_text_stage2 = None
 
 try:
-    from merits_l_llama.src.models.stage3_fusion import Stage3Fusion
+    from merits_l_llama.src.models.stage3_fusion import Stage3Fusion, build_stage3_fusion
 except ImportError:
     Stage3Fusion = None
+    build_stage3_fusion = None
 
-# Mode 2 only:
+# CARE loader — SpeechTextModel is a class, we build a helper below.
 try:
-    from care_training.CARE.pretraining.model_pase import load_pretrained as load_care_wavlm
+    from care_training.CARE.pretraining.model_pase import SpeechTextModel
+    from transformers import WavLMModel, RobertaModel
 except ImportError:
-    load_care_wavlm = None
+    SpeechTextModel = None
 
 try:
     from care_training.scripts.train_care_downstream_iemocap import CAREEmotionClassifier
 except ImportError:
     CAREEmotionClassifier = None
+
+
+def load_care_wavlm(checkpoint_path: str, device: str = "cuda"):
+    """Build SpeechTextModel and load MSP-Podcast pretrained weights."""
+    wavlm = WavLMModel.from_pretrained("microsoft/wavlm-base")
+    roberta = RobertaModel.from_pretrained("roberta-base")
+    model = SpeechTextModel(
+        wavlm_model=wavlm,
+        roberta_model=roberta,
+        num_layers=6,
+        common_model="roberta",
+        use_conv="True",         # matches original CARE training
+        pool_fn="avg",
+    )
+    state = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    sd = state.get("model_state_dict", state.get("model", state))
+    missing, unexpected = model.load_state_dict(sd, strict=False)
+    if missing:
+        log.warning(f"CARE-WavLM missing keys: {len(missing)} (first 3: {missing[:3]})")
+    if unexpected:
+        log.warning(f"CARE-WavLM unexpected keys: {len(unexpected)} (first 3: {unexpected[:3]})")
+    return model.to(device).eval()
 # --------------------------------------------
 
 log = logging.getLogger("merits-l-inference")
