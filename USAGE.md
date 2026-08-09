@@ -90,7 +90,7 @@ Once accepted, the base model is downloaded automatically on first inference
 
 The 6 fine-tuned checkpoints (~1.3 GB) are hosted at:
 
-> https://huggingface.co/ouoouoouoouo/merits-l-llama-care
+> https://huggingface.co/ouoouoouo/merits-l-llama-care
 
 ```bash
 bash scripts/download_checkpoints.sh

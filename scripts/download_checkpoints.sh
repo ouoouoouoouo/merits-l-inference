@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-HF_REPO="${HF_REPO:-ouoouoouoouo/merits-l-llama-care}"   # placeholder — update after upload
+HF_REPO="${HF_REPO:-ouoouoouo/merits-l-llama-care}"
 CKPT_DIR="${1:-checkpoints}"
 
 mkdir -p "$CKPT_DIR"

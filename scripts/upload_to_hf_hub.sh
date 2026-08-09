@@ -19,7 +19,7 @@
 
 set -euo pipefail
 
-HF_REPO="${HF_REPO:-ouoouoouoouo/merits-l-llama-care}"
+HF_REPO="${HF_REPO:-ouoouoouo/merits-l-llama-care}"
 CKPT_DIR="${1:-checkpoints}"
 
 if [ ! -d "$CKPT_DIR" ]; then

@@ -38,7 +38,7 @@ if [ ! -f "$MODE2_DIR/care_wavlm/best.pth" ]; then
     python - <<EOF
 from huggingface_hub import hf_hub_download
 p = hf_hub_download(
-    repo_id="ouoouoouoouo/merits-l-llama-care",
+    repo_id="ouoouoouo/merits-l-llama-care",
     filename="care_wavlm/best.pth",
     local_dir="$MODE2_DIR",
     local_dir_use_symlinks=False,
